@@ -14,10 +14,10 @@ export default function FingerPickerScreen() {
   const [touches, setTouches] = useState<TouchesMap>({});
   const [selectedTouchId, setSelectedTouchId] = useState<number | null>(null);
   
-  // Utilizziamo ReturnType<typeof setTimeout> per tipizzare correttamente il timer in TS
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleTouch = (event: GestureResponderEvent) => {
+  // Aggiorna la mappa dei tocchi attivi leggendo direttamente l'evento nativo
+  const updateTouches = (event: GestureResponderEvent) => {
     const activeTouches = event.nativeEvent.touches;
     const newTouches: TouchesMap = {};
 
@@ -30,35 +30,44 @@ export default function FingerPickerScreen() {
     }
 
     setTouches(newTouches);
+    return activeTouches;
+  };
+
+  const handleTouchStartOrMove = (event: GestureResponderEvent) => {
+    const activeTouches = updateTouches(event);
 
     if (activeTouches.length >= 2) {
       if (!timerRef.current) {
         setSelectedTouchId(null);
         timerRef.current = setTimeout(() => {
-          // Scegliamo un indice casuale basato sulle dita attive al momento dello scatto del timer
-          const randomIndex = Math.floor(Math.random() * activeTouches.length);
-          const winningTouch = activeTouches[randomIndex];
-          setSelectedTouchId(winningTouch.identifier);
+          const currentActive = event.nativeEvent.touches;
+          if (currentActive.length > 0) {
+            const randomIndex = Math.floor(Math.random() * currentActive.length);
+            setSelectedTouchId(currentActive[randomIndex].identifier);
+          }
         }, 1500);
       }
     } else {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-      setSelectedTouchId(null);
+      resetTimerAndSelection();
     }
   };
 
   const handleTouchEnd = (event: GestureResponderEvent) => {
-    handleTouch(event);
-    if (event.nativeEvent.touches.length <= 1) {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-      setSelectedTouchId(null);
+    // Aggiorniamo i tocchi rimasti dopo il rilascio
+    const activeTouches = updateTouches(event);
+
+    // Se rimangono meno di 2 dita, resettiamo tutto immediatamente
+    if (activeTouches.length < 2) {
+      resetTimerAndSelection();
     }
+  };
+
+  const resetTimerAndSelection = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setSelectedTouchId(null);
   };
 
   const touchKeys = Object.keys(touches).map(Number);
@@ -66,9 +75,10 @@ export default function FingerPickerScreen() {
   return (
     <View
       style={styles.container}
-      onTouchStart={handleTouch}
-      onTouchMove={handleTouch}
+      onTouchStart={handleTouchStartOrMove}
+      onTouchMove={handleTouchStartOrMove}
       onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
     >
       {touchKeys.length === 0 ? (
         <View style={styles.instructionContainer}>
@@ -82,7 +92,7 @@ export default function FingerPickerScreen() {
           const isSelected = selectedTouchId !== null && id === selectedTouchId;
           const isDimmed = selectedTouchId !== null && !isSelected;
 
-          if (isDimmed) return null; // Nasconde gli altri pallini quando il vincitore viene evidenziato
+          if (isDimmed) return null;
 
           return (
             <View
