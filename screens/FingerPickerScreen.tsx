@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, GestureResponderEvent } from 'react-native';
+import React, { useState, useRef, ElementRef } from 'react';
+import { StyleSheet, Text, View, GestureResponderEvent, LayoutChangeEvent } from 'react-native';
 
 interface TouchCoord {
   x: number;
@@ -13,10 +13,19 @@ type TouchesMap = {
 export default function FingerPickerScreen() {
   const [touches, setTouches] = useState<TouchesMap>({});
   const [selectedTouchId, setSelectedTouchId] = useState<number | null>(null);
-  
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Aggiorna la mappa dei tocchi attivi leggendo direttamente l'evento nativo
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestTouchesRef = useRef<{ identifier: number }[]>([]);
+  const offsetRef = useRef({ x: 0, y: 0 });
+  const containerRef = useRef<ElementRef<typeof View>>(null);
+
+  // Ricava l'offset assoluto del container sullo schermo
+  const handleLayout = (_e: LayoutChangeEvent) => {
+    containerRef.current?.measureInWindow((x: any, y: any) => {
+      offsetRef.current = { x, y };
+    });
+  };
+
   const updateTouches = (event: GestureResponderEvent) => {
     const activeTouches = event.nativeEvent.touches;
     const newTouches: TouchesMap = {};
@@ -24,11 +33,12 @@ export default function FingerPickerScreen() {
     for (let i = 0; i < activeTouches.length; i++) {
       const t = activeTouches[i];
       newTouches[t.identifier] = {
-        x: t.locationX,
-        y: t.locationY,
+        x: t.pageX - offsetRef.current.x,
+        y: t.pageY - offsetRef.current.y,
       };
     }
 
+    latestTouchesRef.current = activeTouches.map((t) => ({ identifier: t.identifier }));
     setTouches(newTouches);
     return activeTouches;
   };
@@ -40,7 +50,8 @@ export default function FingerPickerScreen() {
       if (!timerRef.current) {
         setSelectedTouchId(null);
         timerRef.current = setTimeout(() => {
-          const currentActive = event.nativeEvent.touches;
+          // Usa i tocchi più recenti, non quelli catturati alla chiusura
+          const currentActive = latestTouchesRef.current;
           if (currentActive.length > 0) {
             const randomIndex = Math.floor(Math.random() * currentActive.length);
             setSelectedTouchId(currentActive[randomIndex].identifier);
@@ -53,10 +64,7 @@ export default function FingerPickerScreen() {
   };
 
   const handleTouchEnd = (event: GestureResponderEvent) => {
-    // Aggiorniamo i tocchi rimasti dopo il rilascio
     const activeTouches = updateTouches(event);
-
-    // Se rimangono meno di 2 dita, resettiamo tutto immediatamente
     if (activeTouches.length < 2) {
       resetTimerAndSelection();
     }
@@ -74,6 +82,8 @@ export default function FingerPickerScreen() {
 
   return (
     <View
+      ref={containerRef}
+      onLayout={handleLayout}
       style={styles.container}
       onTouchStart={handleTouchStartOrMove}
       onTouchMove={handleTouchStartOrMove}
@@ -81,7 +91,7 @@ export default function FingerPickerScreen() {
       onTouchCancel={handleTouchEnd}
     >
       {touchKeys.length === 0 ? (
-        <View style={styles.instructionContainer}>
+        <View style={styles.instructionContainer} pointerEvents="none">
           <Text style={styles.instructionText}>Tieni premuto con più dita sullo schermo...</Text>
         </View>
       ) : (
@@ -97,6 +107,7 @@ export default function FingerPickerScreen() {
           return (
             <View
               key={id}
+              pointerEvents="none"
               style={[
                 styles.circle,
                 {
@@ -115,6 +126,7 @@ export default function FingerPickerScreen() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
