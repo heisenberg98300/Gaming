@@ -92,7 +92,7 @@ export default function FingerPickerScreen() {
     >
       {touchKeys.length === 0 ? (
         <View style={styles.instructionContainer} pointerEvents="none">
-          <Text style={styles.instructionText}>Tieni premuto con più dita sullo schermo...</Text>
+          <Text style={styles.instructionText}>Tenere le dita sullo schermo in attesa di essere scelti...</Text>
         </View>
       ) : (
         touchKeys.map((id) => {
