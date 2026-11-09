@@ -1,45 +1,43 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import DiceScreen from './screens/DiceScreen';
+import FingerPickerScreen from './screens/FingerPickerScreen';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+// Definiamo i tipi per le rotte dei Tab
+type RootTabParamList = {
+  Dado: undefined;
+  'Finger Picker': undefined;
+};
 
+const Tab = createBottomTabNavigator<RootTabParamList>();
+
+export default function App() {
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName = 'ellipse';
+            if (route.name === 'Dado') {
+              iconName = focused ? 'dice' : 'dice-outline';
+            } else if (route.name === 'Finger Picker') {
+              iconName = focused ? 'hand-left' : 'hand-left-outline';
+            }
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: '#6200ee',
+          tabBarInactiveTintColor: 'gray',
+          headerStyle: { backgroundColor: '#6200ee' },
+          headerTintColor: '#fff',
+          headerTitleStyle: { fontWeight: 'bold' },
+        })}
+      >
+        <Tab.Screen name="Dado" component={DiceScreen} options={{ title: 'Lancia il Dado' }} />
+        <Tab.Screen name="Finger Picker" component={FingerPickerScreen} options={{ title: 'Scegli Dita' }} />
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
-
-export default App;
