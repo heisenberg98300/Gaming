@@ -5,11 +5,13 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import DiceScreen from './screens/DiceScreen';
 import FingerPickerScreen from './screens/FingerPickerScreen';
+import ExtractionName from './screens/ExtractionName';
 
 // Definiamo i tipi per le rotte dei Tab
 type RootTabParamList = {
   Dado: undefined;
   'Finger Picker': undefined;
+  'Estrai Nome': undefined;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -37,6 +39,7 @@ export default function App() {
       >
         <Tab.Screen name="Dado" component={DiceScreen} options={{ title: 'Lancia il Dado' }} />
         <Tab.Screen name="Finger Picker" component={FingerPickerScreen} options={{ title: 'Scegli Dita' }} />
+        <Tab.Screen name="Estrai Nome" component={ExtractionName} options={{ title: 'Estrai Nome' }} />
       </Tab.Navigator>
     </NavigationContainer>
   );
