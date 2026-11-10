@@ -6,15 +6,22 @@ export default function ExtractionName() {
   const [namesList, setNamesList] = useState<string[]>([]);
   const [selectedName, setSelectedName] = useState<string | null>(null);
 
-  // Funzione per aggiungere un nome alla lista
+  // Aggiunge un nome alla lista
   const handleAddName = () => {
     if (inputText.trim() === '') return;
     setNamesList([...namesList, inputText.trim()]);
     setInputText('');
-    setSelectedName(null); // Resetta l'estrazione precedente se si aggiunge un nuovo nome
+    setSelectedName(null);
   };
 
-  // Funzione per estrarre casualmente un nome dalla lista
+  // Funzione per rimuovere un utente in base al suo indice nella lista
+  const handleRemoveName = (indexToRemove: number) => {
+    const updatedList = namesList.filter((_, index) => index !== indexToRemove);
+    setNamesList(updatedList);
+    setSelectedName(null); // Resetta il risultato se la lista cambia
+  };
+
+  // Estrae casualmente un nome
   const handlePickRandom = () => {
     if (namesList.length === 0) return;
     const randomIndex = Math.floor(Math.random() * namesList.length);
@@ -46,21 +53,27 @@ export default function ExtractionName() {
         </View>
       )}
 
-      {/* Pulsante per avviare l'estrazione (visibile solo se ci sono nomi) */}
+      {/* Pulsante per estrarre a caso */}
       {namesList.length > 0 && (
         <TouchableOpacity style={[styles.button, styles.pickButton]} onPress={handlePickRandom}>
           <Text style={styles.buttonText}>Estrai a Caso!</Text>
         </TouchableOpacity>
       )}
 
-      {/* Elenco dei nomi inseriti */}
+      {/* Elenco dei nomi inseriti con pulsante di rimozione */}
       <Text style={styles.subTitle}>Partecipanti ({namesList.length}):</Text>
       <FlatList
         data={namesList}
         keyExtractor={(_item, index) => index.toString()}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <View style={styles.listItem}>
             <Text style={styles.listText}>• {item}</Text>
+            <TouchableOpacity 
+              style={styles.deleteButton} 
+              onPress={() => handleRemoveName(index)}
+            >
+              <Text style={styles.deleteButtonText}>✕ Rimuovi</Text>
+            </TouchableOpacity>
           </View>
         )}
       />
@@ -79,6 +92,16 @@ const styles = StyleSheet.create({
   resultLabel: { color: '#aaa', fontSize: 14 },
   resultText: { color: '#03dac6', fontSize: 28, fontWeight: 'bold' },
   subTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginTop: 20, marginBottom: 10 },
-  listItem: { paddingVertical: 5 },
-  listText: { color: '#ddd', fontSize: 16 }
+  listItem: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    backgroundColor: '#1e1e1e', 
+    padding: 10, 
+    borderRadius: 8, 
+    marginBottom: 8 
+  },
+  listText: { color: '#ddd', fontSize: 16, flex: 1 },
+  deleteButton: { backgroundColor: '#cf6679', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6 },
+  deleteButtonText: { color: '#fff', fontSize: 12, fontWeight: 'bold' }
 });
